@@ -6,6 +6,7 @@ import { ComposableMap, Geographies, Geography, Line, Marker } from 'react-simpl
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { shipments } from '../../data/shipments';
+import { tenants } from '../../data/tenants';
 import StatusPill from '../../components/shared/StatusPill';
 import TempPill from '../../components/shared/TempPill';
 import RiskBadge from '../../components/shared/RiskBadge';
@@ -127,7 +128,7 @@ export default function MyShipments() {
           >
             My Shipments
           </motion.h1>
-          <TenantBadge tenantId={currentUser?.tenantId} />
+          <TenantBadge tenant={tenants.find(t => t.id === currentUser?.tenantId)} />
         </div>
       </div>
 

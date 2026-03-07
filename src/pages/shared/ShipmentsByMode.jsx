@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Package, Plane, Ship, Brain as Train, Truck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useShipments } from '../../hooks/useShipments';
+import { tenants } from '../../data/tenants';
 import StatusPill from '../../components/shared/StatusPill';
 import TempPill from '../../components/shared/TempPill';
 import RiskBadge from '../../components/shared/RiskBadge';
@@ -118,7 +119,7 @@ export default function ShipmentsByMode() {
                         <span className="text-sm font-mono font-semibold text-primary">{shipment.id}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <TenantBadge tenantId={shipment.tenantId} />
+                        <TenantBadge tenant={tenants.find(t => t.id === shipment.tenantId) || { name: shipment.tenantName, color: 'blue' }} />
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-primary font-medium">{shipment.origin.city}</div>

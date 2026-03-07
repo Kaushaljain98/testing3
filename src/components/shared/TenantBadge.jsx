@@ -9,6 +9,7 @@ const tenantColors = {
 };
 
 export default function TenantBadge({ tenant, showLock = true, className = '' }) {
+  if (!tenant) return null;
   const colorClass = tenantColors[tenant.color] || tenantColors.blue;
 
   return (
