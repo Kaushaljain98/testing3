@@ -12,7 +12,7 @@ export default function TempPill({ temp, tempClass, showIcon = true, className =
     };
 
     const range = ranges[tempClass];
-    if (!range) return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+    if (!range) return 'bg-[#16b6bb]/10 text-[#008086] dark:text-[#16b6bb] border-[#16b6bb]/20';
 
     if (temp < range.min || temp > range.max) {
       return 'bg-danger/10 text-red-600 dark:text-red-400 border-red-500/20';
