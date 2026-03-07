@@ -39,7 +39,7 @@ export default function TempChart({ data, tempClass, className = '' }) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className={className}
+      className={`w-full h-full ${className}`}
     >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
