@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Shield, Zap, Globe, CheckCircle, Thermometer, Package, Leaf, AlertTriangle, Clock, Database, FileX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -854,104 +854,106 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          {/* Cards */}
-          <div className="relative">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-              {[
-                (activeTestimonial - 1 + testimonials.length) % testimonials.length,
-                activeTestimonial,
-                (activeTestimonial + 1) % testimonials.length
-              ].map((idx, position) => {
-                const t = testimonials[idx];
-                const isCenter = position === 1;
-                return (
-                  <motion.div
-                    key={idx}
-                    initial={{
-                      opacity: 0,
-                      x: testimonialDirection * 60,
-                      scale: isCenter ? 0.98 : 0.93
-                    }}
-                    animate={{
-                      opacity: isCenter ? 1 : 0.55,
-                      x: 0,
-                      scale: isCenter ? 1.04 : 0.97
-                    }}
-                    exit={{
-                      opacity: 0,
-                      x: -testimonialDirection * 60
-                    }}
-                    transition={{
-                      duration: 0.5,
-                      ease: [0.25, 0.46, 0.45, 0.94],
-                      delay: position * 0.04
-                    }}
-                    className="rounded-2xl p-6 flex flex-col cursor-pointer"
-                    style={{
-                      backgroundColor: isCenter ? '#ffffff' : 'rgba(255,255,255,0.06)',
-                      border: isCenter ? 'none' : '1px solid rgba(255,255,255,0.08)',
-                      transition: 'background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease',
-                      boxShadow: isCenter ? '0 20px 60px rgba(0,0,0,0.3)' : 'none'
-                    }}
-                    onClick={() => {
-                      setTestimonialDirection(position < 1 ? -1 : 1);
-                      setActiveTestimonial(idx);
-                    }}
-                  >
-                    {/* Stars */}
-                    <div className="flex gap-0.5 mb-4">
-                      {Array.from({ length: t.stars }).map((_, i) => (
-                        <motion.span
-                          key={i}
-                          className="text-base"
-                          initial={{ opacity: 0, y: 4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 + i * 0.04 }}
-                          style={{ color: '#f59e0b' }}
-                        >★</motion.span>
-                      ))}
-                    </div>
-
-                    {/* Quote */}
-                    <motion.p
-                      className="text-sm leading-relaxed flex-1 mb-6"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.15 }}
-                      style={{ color: isCenter ? '#3d6b6c' : 'rgba(255,255,255,0.55)' }}
+          <div className="relative overflow-hidden">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                key={activeTestimonial}
+                initial={{ opacity: 0, x: testimonialDirection * 80 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: testimonialDirection * -80 }}
+                transition={{
+                  duration: 0.45,
+                  ease: [0.32, 0.72, 0, 1]
+                }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch"
+              >
+                {[
+                  (activeTestimonial - 1 + testimonials.length) % testimonials.length,
+                  activeTestimonial,
+                  (activeTestimonial + 1) % testimonials.length
+                ].map((idx, position) => {
+                  const t = testimonials[idx];
+                  const isCenter = position === 1;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        if (position !== 1) {
+                          setTestimonialDirection(position < 1 ? -1 : 1);
+                          setActiveTestimonial(idx);
+                        }
+                      }}
+                      className="rounded-2xl p-6 flex flex-col"
+                      style={{
+                        backgroundColor: isCenter
+                          ? '#ffffff'
+                          : 'rgba(255,255,255,0.06)',
+                        border: isCenter
+                          ? 'none'
+                          : '1px solid rgba(255,255,255,0.08)',
+                        boxShadow: isCenter
+                          ? '0 24px 64px rgba(0,0,0,0.35)'
+                          : 'none',
+                        opacity: isCenter ? 1 : 0.5,
+                        transform: isCenter ? 'scale(1.04)' : 'scale(0.97)',
+                        transition: 'opacity 0.3s ease, transform 0.3s ease',
+                        cursor: position !== 1 ? 'pointer' : 'default'
+                      }}
                     >
-                      "{t.text}"
-                    </motion.p>
+                      {/* Stars */}
+                      <div className="flex gap-0.5 mb-4">
+                        {Array.from({ length: t.stars }).map((_, i) => (
+                          <span key={i} style={{ color: '#f59e0b' }}>★</span>
+                        ))}
+                      </div>
 
-                    {/* Author */}
-                    <div className="flex items-center gap-3">
-                      <motion.div
-                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.3, delay: 0.2 }}
+                      {/* Quote */}
+                      <p className="text-sm leading-relaxed flex-1 mb-6"
                         style={{
-                          backgroundColor: isCenter ? '#eaf9f9' : 'rgba(22,182,187,0.2)',
-                          color: isCenter ? '#008086' : '#16b6bb'
-                        }}
-                      >
-                        {t.initials}
-                      </motion.div>
-                      <div>
-                        <div className="font-semibold text-sm"
-                          style={{ color: isCenter ? '#0d2b2c' : 'rgba(255,255,255,0.85)' }}>
-                          {t.name}
+                          color: isCenter
+                            ? '#3d6b6c'
+                            : 'rgba(255,255,255,0.55)'
+                        }}>
+                        "{t.text}"
+                      </p>
+
+                      {/* Author */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
+                          style={{
+                            backgroundColor: isCenter
+                              ? '#eaf9f9'
+                              : 'rgba(22,182,187,0.2)',
+                            color: isCenter ? '#008086' : '#16b6bb'
+                          }}
+                        >
+                          {t.initials}
                         </div>
-                        <div className="text-xs mt-0.5"
-                          style={{ color: isCenter ? '#7aa8a9' : 'rgba(255,255,255,0.35)' }}>
-                          {t.title} · {t.company}
+                        <div>
+                          <div className="font-semibold text-sm"
+                            style={{
+                              color: isCenter
+                                ? '#0d2b2c'
+                                : 'rgba(255,255,255,0.85)'
+                            }}>
+                            {t.name}
+                          </div>
+                          <div className="text-xs mt-0.5"
+                            style={{
+                              color: isCenter
+                                ? '#7aa8a9'
+                                : 'rgba(255,255,255,0.35)'
+                            }}>
+                            {t.title} · {t.company}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </motion.div>
+            </AnimatePresence>
 
             {/* Left arrow */}
             <button
@@ -960,10 +962,19 @@ export default function LandingPage() {
                 setActiveTestimonial(prev =>
                   (prev - 1 + testimonials.length) % testimonials.length);
               }}
-              className="absolute -left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all duration-200"
-              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(22,182,187,0.25)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'}
+              className="absolute -left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-xl z-10 transition-all duration-200"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.7)'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = 'rgba(22,182,187,0.3)';
+                e.currentTarget.style.color = '#ffffff';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+              }}
             >‹</button>
 
             {/* Right arrow */}
@@ -972,10 +983,19 @@ export default function LandingPage() {
                 setTestimonialDirection(1);
                 setActiveTestimonial(prev => (prev + 1) % testimonials.length);
               }}
-              className="absolute -right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all duration-200"
-              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(22,182,187,0.25)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'}
+              className="absolute -right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-xl z-10 transition-all duration-200"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.7)'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = 'rgba(22,182,187,0.3)';
+                e.currentTarget.style.color = '#ffffff';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+              }}
             >›</button>
           </div>
 
