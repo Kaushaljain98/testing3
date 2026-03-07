@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, AreaChart } from 'recharts';
 import { shipments } from '../../data/shipments';
 import { carriers } from '../../data/carriers';
-import { TrendingUp, Package, AlertTriangle, CheckCircle, DollarSign, Download, Calendar, Plane, Ship, Truck, Train } from 'lucide-react';
+import { TrendingUp, Package, AlertTriangle, CheckCircle, DollarSign, Download, Calendar, Plane, Ship, Truck, Brain as Train } from 'lucide-react';
 import KPICard from '../../components/shared/KPICard';
 import { useToast } from '../../context/ToastContext';
 

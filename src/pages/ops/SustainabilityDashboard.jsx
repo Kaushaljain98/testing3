@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, AreaChart, Area } from 'recharts';
 import { shipments } from '../../data/shipments';
-import { Leaf, TrendingDown, Award, Zap, AlertCircle, CheckCircle, ArrowRight, Plane, Ship, Truck, Train } from 'lucide-react';
+import { Leaf, TrendingDown, Award, Zap, AlertCircle, CheckCircle, ArrowRight, Plane, Ship, Truck, Brain as Train } from 'lucide-react';
 import KPICard from '../../components/shared/KPICard';
 import { useToast } from '../../context/ToastContext';
 
