@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Truck, Thermometer, Package, Shield, FileText, AlertCircle, Play } from 'lucide-react';
+import { ArrowLeft, MapPin, Truck, Thermometer, Package, Shield, FileText, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useShipments } from '../../hooks/useShipments';
 import { temperatureLogs } from '../../data/temperatureLogs';
@@ -25,20 +25,6 @@ export default function ShipmentTracking() {
 
   const shipment = allShipments.find(s => s.id === id);
   const tempData = temperatureLogs[id] || [];
-  const chartData = tempData.length > 0 ? tempData : (() => {
-    if (!shipment) return [];
-    const base = (shipment.tempRange.min + shipment.tempRange.max) / 2;
-    const variance = (shipment.tempRange.max - shipment.tempRange.min) * 0.12;
-    const start = new Date(shipment.departureDate || '2026-03-07T00:00:00Z');
-    return Array.from({ length: 48 }, (_, i) => ({
-      timestamp: new Date(start.getTime() + i * 3600000).toISOString(),
-      temperature: parseFloat(
-        (base + Math.sin(i * 0.4) * variance + (Math.random() - 0.5) * 0.3)
-        .toFixed(2)
-      ),
-      location: i % 8 === 0 ? 'Hub Transfer' : 'In Transit'
-    }));
-  })();
 
   const [position, setPosition] = useState({
     coordinates: shipment ? [
@@ -89,22 +75,13 @@ export default function ShipmentTracking() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-secondary hover:text-primary transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-        <button
-          onClick={() => navigate('/replay/' + shipment.id)}
-          className="flex items-center gap-2 px-4 py-2 bg-accent/10 border border-accent/30 text-accent rounded-lg hover:bg-accent/20 transition-colors text-sm font-medium"
-        >
-          <Play className="w-4 h-4" />
-          Replay Journey
-        </button>
-      </div>
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-secondary hover:text-primary transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back
+      </button>
 
       <div className="bg-surface border border-border rounded-xl p-6">
         <div className="flex items-start justify-between mb-6">
@@ -265,14 +242,14 @@ export default function ShipmentTracking() {
             </div>
           </div>
 
-          {chartData.length > 0 && (
+          {tempData.length > 0 && (
             <div className="bg-surface border border-border rounded-xl p-6">
               <h2 className="text-xl font-semibold text-primary mb-4 flex items-center gap-2">
                 <Thermometer className="w-5 h-5" />
                 Temperature Log (48h)
               </h2>
               <div className="h-64">
-                <TempChart data={chartData} tempClass={shipment.tempClass} />
+                <TempChart data={tempData} tempClass={shipment.tempClass} />
               </div>
             </div>
           )}
