@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, MapPin, Truck, Thermometer, Package, Shield, FileText, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useShipments } from '../../hooks/useShipments';
 import { temperatureLogs } from '../../data/temperatureLogs';
 import StatusPill from '../../components/shared/StatusPill';
@@ -10,7 +10,7 @@ import RiskBadge from '../../components/shared/RiskBadge';
 import ColdHealthScore from '../../components/charts/ColdHealthScore';
 import TempChart from '../../components/charts/TempChart';
 import LoadingSkeleton from '../../components/shared/LoadingSkeleton';
-import { ComposableMap, Geographies, Geography, Line, Marker } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, Line, Marker, ZoomableGroup } from 'react-simple-maps';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
@@ -19,11 +19,37 @@ export default function ShipmentTracking() {
   const navigate = useNavigate();
   const { allShipments, canViewCompliance, isReadOnly } = useShipments();
   const [loading, setLoading] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
 
   setTimeout(() => setLoading(false), 400);
 
   const shipment = allShipments.find(s => s.id === id);
   const tempData = temperatureLogs[id] || [];
+
+  const [position, setPosition] = useState({
+    coordinates: shipment ? [
+      (shipment.origin.lng + shipment.destination.lng) / 2,
+      (shipment.origin.lat + shipment.destination.lat) / 2
+    ] : [0, 20],
+    zoom: 2
+  });
+
+  useEffect(() => {
+    if (shipment) {
+      setPosition({
+        coordinates: [
+          (shipment.origin.lng + shipment.destination.lng) / 2,
+          (shipment.origin.lat + shipment.destination.lat) / 2
+        ],
+        zoom: 2
+      });
+    }
+  }, [shipment]);
+
+  function handleMoveEnd(position) {
+    setPosition(position);
+    setIsDragging(false);
+  }
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -135,7 +161,7 @@ export default function ShipmentTracking() {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-surface border border-border rounded-xl p-6">
             <h2 className="text-xl font-semibold text-primary mb-4">Route Map</h2>
-            <div className="h-64 bg-background rounded-lg overflow-hidden">
+            <div className="relative h-64 bg-background rounded-lg overflow-hidden" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
               <ComposableMap
                 projection="geoMercator"
                 projectionConfig={{
@@ -146,34 +172,73 @@ export default function ShipmentTracking() {
                   scale: 300
                 }}
               >
-                <Geographies geography={geoUrl}>
-                  {({ geographies }) =>
-                    geographies.map((geo) => (
-                      <Geography
-                        key={geo.rsmKey}
-                        geography={geo}
-                        fill="rgb(var(--border))"
-                        stroke="rgb(var(--background))"
-                        strokeWidth={0.5}
-                      />
-                    ))
-                  }
-                </Geographies>
-                <Line
-                  from={[shipment.origin.lng, shipment.origin.lat]}
-                  to={[shipment.destination.lng, shipment.destination.lat]}
-                  stroke="rgb(14, 165, 233)"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeDasharray="5,5"
-                />
-                <Marker coordinates={[shipment.origin.lng, shipment.origin.lat]}>
-                  <circle r={6} fill="rgb(16, 185, 129)" />
-                </Marker>
-                <Marker coordinates={[shipment.destination.lng, shipment.destination.lat]}>
-                  <circle r={6} fill="rgb(14, 165, 233)" />
-                </Marker>
+                <ZoomableGroup
+                  zoom={position.zoom}
+                  center={position.coordinates}
+                  onMoveEnd={handleMoveEnd}
+                  onMoveStart={() => setIsDragging(true)}
+                  minZoom={1}
+                  maxZoom={6}
+                >
+                  <Geographies geography={geoUrl}>
+                    {({ geographies }) =>
+                      geographies.map((geo) => (
+                        <Geography
+                          key={geo.rsmKey}
+                          geography={geo}
+                          fill="rgb(var(--border))"
+                          stroke="rgb(var(--background))"
+                          strokeWidth={0.5}
+                        />
+                      ))
+                    }
+                  </Geographies>
+                  <Line
+                    from={[shipment.origin.lng, shipment.origin.lat]}
+                    to={[shipment.destination.lng, shipment.destination.lat]}
+                    stroke="rgb(14, 165, 233)"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeDasharray="5,5"
+                  />
+                  <Marker coordinates={[shipment.origin.lng, shipment.origin.lat]}>
+                    <circle r={6} fill="rgb(16, 185, 129)" />
+                  </Marker>
+                  <Marker coordinates={[shipment.destination.lng, shipment.destination.lat]}>
+                    <circle r={6} fill="rgb(14, 165, 233)" />
+                  </Marker>
+                </ZoomableGroup>
               </ComposableMap>
+              <div className="absolute bottom-3 right-3 flex flex-col gap-1">
+                <button
+                  onClick={() => setPosition(pos => ({ ...pos, zoom: Math.min(pos.zoom * 1.5, 6) }))}
+                  className="w-8 h-8 bg-surface border border-border rounded-lg text-primary hover:bg-border transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => setPosition(pos => ({ ...pos, zoom: Math.max(pos.zoom / 1.5, 1) }))}
+                  className="w-8 h-8 bg-surface border border-border rounded-lg text-primary hover:bg-border transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+                >
+                  −
+                </button>
+                <button
+                  onClick={() => setPosition({
+                    coordinates: [
+                      (shipment.origin.lng + shipment.destination.lng) / 2,
+                      (shipment.origin.lat + shipment.destination.lat) / 2
+                    ],
+                    zoom: 2
+                  })}
+                  className="w-8 h-8 bg-surface border border-border rounded-lg text-secondary hover:bg-border transition-colors flex items-center justify-center shadow-sm"
+                  title="Reset view"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
-import { Warehouse, Thermometer, Shield, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
+import { Warehouse, Thermometer, Shield, TrendingUp, AlertTriangle, X } from 'lucide-react';
 import Modal from '../../components/shared/Modal';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -9,6 +9,14 @@ const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 export default function ColdStorageMap() {
   const [selectedHub, setSelectedHub] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [popupHub, setPopupHub] = useState(null);
+
+  function handleMoveEnd(position) {
+    setPosition(position);
+    setIsDragging(false);
+  }
 
   const hubs = [
     {
@@ -103,6 +111,10 @@ export default function ColdStorageMap() {
   };
 
   const handleHubClick = (hub) => {
+    setPopupHub(hub);
+  };
+
+  const handleHubCardClick = (hub) => {
     setSelectedHub(hub);
     setShowModal(true);
   };
@@ -160,54 +172,144 @@ export default function ColdStorageMap() {
       </div>
 
       <div className="bg-surface border border-border rounded-xl p-6">
-        <div className="h-[600px] rounded-lg overflow-hidden">
+        <div className="relative h-[600px] rounded-lg overflow-hidden" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
           <ComposableMap projection="geoMercator" projectionConfig={{ scale: 140 }}>
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="rgb(var(--border))"
-                    stroke="rgb(var(--background))"
-                    strokeWidth={0.5}
+            <ZoomableGroup
+              zoom={position.zoom}
+              center={position.coordinates}
+              onMoveEnd={handleMoveEnd}
+              onMoveStart={() => setIsDragging(true)}
+              minZoom={1}
+              maxZoom={8}
+            >
+              <Geographies geography={geoUrl}>
+                {({ geographies }) =>
+                  geographies.map((geo) => (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill="rgb(var(--border))"
+                      stroke="rgb(var(--background))"
+                      strokeWidth={0.5}
+                      style={{
+                        hover: {
+                          fill: 'rgb(var(--accent))',
+                          opacity: 0.3
+                        }
+                      }}
+                    />
+                  ))
+                }
+              </Geographies>
+              {hubs.map((hub) => {
+                const statusColor = getStatusColor(hub.status);
+                return (
+                  <Marker
+                    key={hub.id}
+                    coordinates={hub.coordinates}
+                    onClick={() => handleHubClick(hub)}
+                  >
+                    <g className="cursor-pointer">
+                      <circle
+                        r={8}
+                        fill={statusColor.fill}
+                        stroke="white"
+                        strokeWidth={2}
+                        className="hover:r-10 transition-all"
+                      />
+                      <circle
+                        r={12}
+                        fill={statusColor.fill}
+                        opacity={0.3}
+                        className="animate-pulse"
+                      />
+                    </g>
+                  </Marker>
+                );
+              })}
+            </ZoomableGroup>
+          </ComposableMap>
+
+          {popupHub && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-surface border-2 border-border rounded-xl p-4 shadow-2xl z-50 min-w-[300px]">
+              <button
+                onClick={() => setPopupHub(null)}
+                className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-border transition-colors"
+              >
+                <X className="w-4 h-4 text-secondary" />
+              </button>
+              <h3 className="text-lg font-bold text-primary mb-1">{popupHub.name}</h3>
+              <p className="text-sm text-secondary mb-3">{popupHub.city}</p>
+
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-secondary">Utilization</span>
+                  <span className={`text-sm font-bold ${getStatusColor(popupHub.status).text}`}>
+                    {popupHub.capacity}%
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-border rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
                     style={{
-                      hover: {
-                        fill: 'rgb(var(--accent))',
-                        opacity: 0.3
-                      }
+                      width: `${popupHub.capacity}%`,
+                      backgroundColor: getStatusColor(popupHub.status).fill
                     }}
                   />
-                ))
-              }
-            </Geographies>
-            {hubs.map((hub) => {
-              const statusColor = getStatusColor(hub.status);
-              return (
-                <Marker
-                  key={hub.id}
-                  coordinates={hub.coordinates}
-                  onClick={() => handleHubClick(hub)}
-                >
-                  <g className="cursor-pointer">
-                    <circle
-                      r={8}
-                      fill={statusColor.fill}
-                      stroke="white"
-                      strokeWidth={2}
-                      className="hover:r-10 transition-all"
-                    />
-                    <circle
-                      r={12}
-                      fill={statusColor.fill}
-                      opacity={0.3}
-                      className="animate-pulse"
-                    />
-                  </g>
-                </Marker>
-              );
-            })}
-          </ComposableMap>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <div className="text-xs text-secondary mb-1">Temperature Classes</div>
+                <div className="flex flex-wrap gap-1">
+                  {popupHub.tempClasses.map((temp, idx) => (
+                    <span key={idx} className="px-2 py-0.5 bg-accent/10 border border-accent/30 rounded text-xs font-mono text-accent">
+                      {temp}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-xs text-secondary mb-3">
+                Contact: <span className="text-primary font-medium">Available 24/7</span>
+              </div>
+
+              <button
+                onClick={() => {
+                  setPopupHub(null);
+                  handleHubCardClick(popupHub);
+                }}
+                className="w-full px-3 py-2 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg transition-colors text-sm"
+              >
+                View Details
+              </button>
+            </div>
+          )}
+
+          <div className="absolute bottom-3 right-3 flex flex-col gap-1">
+            <button
+              onClick={() => setPosition(pos => ({ ...pos, zoom: Math.min(pos.zoom * 1.5, 8) }))}
+              className="w-8 h-8 bg-surface border border-border rounded-lg text-primary hover:bg-border transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+            >
+              +
+            </button>
+            <button
+              onClick={() => setPosition(pos => ({ ...pos, zoom: Math.max(pos.zoom / 1.5, 1) }))}
+              className="w-8 h-8 bg-surface border border-border rounded-lg text-primary hover:bg-border transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+            >
+              −
+            </button>
+            <button
+              onClick={() => setPosition({ coordinates: [0, 20], zoom: 1 })}
+              className="w-8 h-8 bg-surface border border-border rounded-lg text-secondary hover:bg-border transition-colors flex items-center justify-center shadow-sm"
+              title="Reset view"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -220,7 +322,7 @@ export default function ColdStorageMap() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              onClick={() => handleHubClick(hub)}
+              onClick={() => handleHubCardClick(hub)}
               className="bg-surface border border-border rounded-xl p-4 cursor-pointer hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start justify-between mb-3">

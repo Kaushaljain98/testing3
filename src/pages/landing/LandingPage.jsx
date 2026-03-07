@@ -3,13 +3,20 @@ import { ArrowRight, Shield, Zap, Globe, CheckCircle, Thermometer, Package, Leaf
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import ThemeToggle from '../../components/shared/ThemeToggle';
-import { ComposableMap, Geographies, Geography, Line, Marker } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, Line, Marker, ZoomableGroup } from 'react-simple-maps';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ shipments: 0, compliance: 0, countries: 0 });
+  const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  function handleMoveEnd(position) {
+    setPosition(position);
+    setIsDragging(false);
+  }
 
   useEffect(() => {
     const duration = 2000;
@@ -282,52 +289,85 @@ export default function LandingPage() {
           <h2 className="text-4xl font-bold text-center mb-4">Global Logistics Network</h2>
           <p className="text-center text-blue-200 mb-12">Real-time visibility across all transport modes</p>
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-            <div className="h-[500px] rounded-lg overflow-hidden">
+            <div className="relative h-[500px] rounded-lg overflow-hidden" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
               <ComposableMap projection="geoMercator" projectionConfig={{ scale: 140 }}>
-                <Geographies geography={geoUrl}>
-                  {({ geographies }) =>
-                    geographies.map((geo) => (
-                      <Geography
-                        key={geo.rsmKey}
-                        geography={geo}
-                        fill="rgba(255, 255, 255, 0.05)"
-                        stroke="rgba(255, 255, 255, 0.1)"
-                        strokeWidth={0.5}
+                <ZoomableGroup
+                  zoom={position.zoom}
+                  center={position.coordinates}
+                  onMoveEnd={handleMoveEnd}
+                  onMoveStart={() => setIsDragging(true)}
+                  minZoom={1}
+                  maxZoom={8}
+                >
+                  <Geographies geography={geoUrl}>
+                    {({ geographies }) =>
+                      geographies.map((geo) => (
+                        <Geography
+                          key={geo.rsmKey}
+                          geography={geo}
+                          fill="rgba(255, 255, 255, 0.05)"
+                          stroke="rgba(255, 255, 255, 0.1)"
+                          strokeWidth={0.5}
+                        />
+                      ))
+                    }
+                  </Geographies>
+                  {[
+                    { from: [-74, 40.7], to: [2.35, 48.86], color: 'rgb(14, 165, 233)' },
+                    { from: [2.35, 48.86], to: [139.69, 35.68], color: 'rgb(245, 158, 11)' },
+                    { from: [-122, 37.77], to: [151.2, -33.86], color: 'rgb(16, 185, 129)' },
+                    { from: [139.69, 35.68], to: [103.85, 1.35], color: 'rgb(168, 85, 247)' },
+                    { from: [103.85, 1.35], to: [77.1, 28.7], color: 'rgb(14, 165, 233)' }
+                  ].map((route, i) => (
+                    <motion.g
+                      key={i}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.2, duration: 1 }}
+                    >
+                      <Line
+                        from={route.from}
+                        to={route.to}
+                        stroke={route.color}
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeDasharray="5,5"
+                        opacity={0.8}
                       />
-                    ))
-                  }
-                </Geographies>
-                {[
-                  { from: [-74, 40.7], to: [2.35, 48.86], color: 'rgb(14, 165, 233)' },
-                  { from: [2.35, 48.86], to: [139.69, 35.68], color: 'rgb(245, 158, 11)' },
-                  { from: [-122, 37.77], to: [151.2, -33.86], color: 'rgb(16, 185, 129)' },
-                  { from: [139.69, 35.68], to: [103.85, 1.35], color: 'rgb(168, 85, 247)' },
-                  { from: [103.85, 1.35], to: [77.1, 28.7], color: 'rgb(14, 165, 233)' }
-                ].map((route, i) => (
-                  <motion.g
-                    key={i}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.2, duration: 1 }}
-                  >
-                    <Line
-                      from={route.from}
-                      to={route.to}
-                      stroke={route.color}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeDasharray="5,5"
-                      opacity={0.8}
-                    />
-                    <Marker coordinates={route.from}>
-                      <circle r={4} fill={route.color} />
-                    </Marker>
-                    <Marker coordinates={route.to}>
-                      <circle r={4} fill={route.color} opacity={0.6} />
-                    </Marker>
-                  </motion.g>
-                ))}
+                      <Marker coordinates={route.from}>
+                        <circle r={4} fill={route.color} />
+                      </Marker>
+                      <Marker coordinates={route.to}>
+                        <circle r={4} fill={route.color} opacity={0.6} />
+                      </Marker>
+                    </motion.g>
+                  ))}
+                </ZoomableGroup>
               </ComposableMap>
+              <div className="absolute bottom-3 right-3 flex flex-col gap-1">
+                <button
+                  onClick={() => setPosition(pos => ({ ...pos, zoom: Math.min(pos.zoom * 1.5, 8) }))}
+                  className="w-8 h-8 bg-white/10 backdrop-blur border border-white/20 rounded-lg text-white hover:bg-white/20 transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => setPosition(pos => ({ ...pos, zoom: Math.max(pos.zoom / 1.5, 1) }))}
+                  className="w-8 h-8 bg-white/10 backdrop-blur border border-white/20 rounded-lg text-white hover:bg-white/20 transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+                >
+                  −
+                </button>
+                <button
+                  onClick={() => setPosition({ coordinates: [0, 20], zoom: 1 })}
+                  className="w-8 h-8 bg-white/10 backdrop-blur border border-white/20 rounded-lg text-white/70 hover:bg-white/20 transition-colors flex items-center justify-center shadow-sm"
+                  title="Reset view"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>

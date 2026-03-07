@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plane, Ship, Truck, Brain as Train, Search, FileDown, ArrowRight, AlertCircle } from 'lucide-react';
-import { ComposableMap, Geographies, Geography, Line, Marker } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, Line, Marker, ZoomableGroup } from 'react-simple-maps';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { shipments } from '../../data/shipments';
@@ -66,6 +66,13 @@ export default function MyShipments() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [tempClassFilter, setTempClassFilter] = useState('all');
   const [modeFilter, setModeFilter] = useState('all');
+  const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  function handleMoveEnd(position) {
+    setPosition(position);
+    setIsDragging(false);
+  }
 
   const myShipments = useMemo(() =>
     shipments.filter(s => s.tenantId === currentUser?.tenantId),
@@ -159,41 +166,74 @@ export default function MyShipments() {
         className="bg-surface border border-border rounded-xl p-4"
       >
         <h2 className="text-lg font-semibold text-primary mb-4">Active Shipments Map</h2>
-        <div className="h-56 bg-background rounded-lg overflow-hidden">
+        <div className="relative h-56 bg-background rounded-lg overflow-hidden" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
           <ComposableMap projection="geoMercator" projectionConfig={{ scale: 140 }}>
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="rgb(var(--border))"
-                    stroke="rgb(var(--background))"
-                    strokeWidth={0.5}
+            <ZoomableGroup
+              zoom={position.zoom}
+              center={position.coordinates}
+              onMoveEnd={handleMoveEnd}
+              onMoveStart={() => setIsDragging(true)}
+              minZoom={1}
+              maxZoom={8}
+            >
+              <Geographies geography={geoUrl}>
+                {({ geographies }) =>
+                  geographies.map((geo) => (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill="rgb(var(--border))"
+                      stroke="rgb(var(--background))"
+                      strokeWidth={0.5}
+                    />
+                  ))
+                }
+              </Geographies>
+              {activeShipments.map((shipment) => (
+                <g key={shipment.id}>
+                  <Line
+                    from={[shipment.origin.lng, shipment.origin.lat]}
+                    to={[shipment.destination.lng, shipment.destination.lat]}
+                    stroke="rgb(14, 165, 233)"
+                    strokeWidth={1}
+                    strokeLinecap="round"
+                    strokeDasharray="5,5"
+                    opacity={0.6}
                   />
-                ))
-              }
-            </Geographies>
-            {activeShipments.map((shipment) => (
-              <g key={shipment.id}>
-                <Line
-                  from={[shipment.origin.lng, shipment.origin.lat]}
-                  to={[shipment.destination.lng, shipment.destination.lat]}
-                  stroke="rgb(14, 165, 233)"
-                  strokeWidth={1}
-                  strokeLinecap="round"
-                  strokeDasharray="5,5"
-                  opacity={0.6}
-                />
-                <Marker coordinates={[shipment.origin.lng, shipment.origin.lat]}>
-                  <circle r={3} fill="rgb(16, 185, 129)" />
-                </Marker>
-                <Marker coordinates={[shipment.destination.lng, shipment.destination.lat]}>
-                  <circle r={3} fill="rgb(14, 165, 233)" />
-                </Marker>
-              </g>
-            ))}
+                  <Marker coordinates={[shipment.origin.lng, shipment.origin.lat]}>
+                    <circle r={3} fill="rgb(16, 185, 129)" />
+                  </Marker>
+                  <Marker coordinates={[shipment.destination.lng, shipment.destination.lat]}>
+                    <circle r={3} fill="rgb(14, 165, 233)" />
+                  </Marker>
+                </g>
+              ))}
+            </ZoomableGroup>
           </ComposableMap>
+          <div className="absolute bottom-3 right-3 flex flex-col gap-1">
+            <button
+              onClick={() => setPosition(pos => ({ ...pos, zoom: Math.min(pos.zoom * 1.5, 8) }))}
+              className="w-8 h-8 bg-surface border border-border rounded-lg text-primary hover:bg-border transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+            >
+              +
+            </button>
+            <button
+              onClick={() => setPosition(pos => ({ ...pos, zoom: Math.max(pos.zoom / 1.5, 1) }))}
+              className="w-8 h-8 bg-surface border border-border rounded-lg text-primary hover:bg-border transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+            >
+              −
+            </button>
+            <button
+              onClick={() => setPosition({ coordinates: [0, 20], zoom: 1 })}
+              className="w-8 h-8 bg-surface border border-border rounded-lg text-secondary hover:bg-border transition-colors flex items-center justify-center shadow-sm"
+              title="Reset view"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </motion.div>
 
