@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Package, Clock, CheckCircle, FileText, TrendingUp, MapPin } from 'lucide-react';
+import { Package, Clock, CheckCircle, FileText, TrendingUp, MapPin, UserPlus, Users, Send, XCircle } from 'lucide-react';
 import KPICard from '../../components/shared/KPICard';
 import StatusPill from '../../components/shared/StatusPill';
 import TempPill from '../../components/shared/TempPill';
@@ -10,6 +10,8 @@ import { shipments } from '../../data/shipments';
 import { alerts } from '../../data/alerts';
 import { tenants } from '../../data/tenants';
 import { useNavigate } from 'react-router-dom';
+import { registrationRequests, addRequest } from '../../data/registrationRequests';
+import { useToast } from '../../context/ToastContext';
 import { ComposableMap, Geographies, Geography, Line, Marker, ZoomableGroup } from 'react-simple-maps';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -17,8 +19,14 @@ const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 export default function ClientDashboard() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
   const [isDragging, setIsDragging] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [requestForm, setRequestForm] = useState({
+    name: '', email: '', jobTitle: '', role: 'client_user', reason: ''
+  });
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
 
   function handleMoveEnd(position) {
     setPosition(position);
@@ -35,6 +43,11 @@ export default function ClientDashboard() {
   const tempCompliance = 100;
   const pendingApprovals = 2;
 
+  const isClientAdmin = currentUser?.role === 'client_admin';
+  const myRequests = registrationRequests.filter(
+    r => r.tenantId === currentUser?.tenantId
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -50,6 +63,34 @@ export default function ClientDashboard() {
         </div>
       </div>
 
+      {isClientAdmin && (
+        <div className="flex gap-1 bg-surface border border-border rounded-xl p-1 w-fit">
+          {[
+            { id: 'dashboard', label: '📊 Dashboard' },
+            { id: 'team', label: '👥 Team Access' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                activeTab === tab.id
+                  ? 'bg-accent text-white shadow-sm'
+                  : 'text-secondary hover:text-primary'
+              }`}
+            >
+              {tab.label}
+              {tab.id === 'team' && myRequests.filter(r => r.status === 'pending').length > 0 && (
+                <span className="ml-2 bg-warning text-white text-xs rounded-full px-1.5 py-0.5">
+                  {myRequests.filter(r => r.status === 'pending').length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {(!isClientAdmin || activeTab === 'dashboard') && (
+        <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
           icon={Package}
@@ -318,6 +359,220 @@ export default function ClientDashboard() {
           </div>
         </div>
       </div>
+        </>
+      )}
+
+      {isClientAdmin && activeTab === 'team' && (
+        <div className="grid lg:grid-cols-2 gap-6">
+
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="p-6 border-b border-border flex items-center gap-3">
+              <div className="w-9 h-9 bg-accent/10 rounded-lg flex items-center justify-center">
+                <UserPlus className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-primary">
+                  Request New User Access
+                </h2>
+                <p className="text-xs text-secondary">
+                  Submit a request to PolarAxis admin
+                </p>
+              </div>
+            </div>
+
+            {requestSubmitted ? (
+              <div className="p-8 text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                  className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4"
+                >
+                  <CheckCircle className="w-8 h-8 text-success" />
+                </motion.div>
+                <h3 className="text-lg font-semibold text-primary mb-2">
+                  Request Submitted!
+                </h3>
+                <p className="text-sm text-secondary mb-6">
+                  PolarAxis admin will review and send an invite
+                  link to the user within 1 business day.
+                </p>
+                <button
+                  onClick={() => {
+                    setRequestSubmitted(false);
+                    setRequestForm({
+                      name: '', email: '', jobTitle: '',
+                      role: 'client_user', reason: ''
+                    });
+                  }}
+                  className="px-5 py-2.5 bg-accent hover:bg-accent-dark text-white rounded-lg text-sm font-semibold transition-colors"
+                >
+                  Submit Another Request
+                </button>
+              </div>
+            ) : (
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1.5">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={requestForm.name}
+                      onChange={e => setRequestForm(p => ({ ...p, name: e.target.value }))}
+                      placeholder="Dr. Jane Smith"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1.5">
+                      Work Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={requestForm.email}
+                      onChange={e => setRequestForm(p => ({ ...p, email: e.target.value }))}
+                      placeholder={`jane@${tenant?.name?.toLowerCase().replace(/\s/g,'')}.com`}
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1.5">
+                      Job Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={requestForm.jobTitle}
+                      onChange={e => setRequestForm(p => ({ ...p, jobTitle: e.target.value }))}
+                      placeholder="Supply Chain Manager"
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1.5">
+                      Access Role *
+                    </label>
+                    <select
+                      value={requestForm.role}
+                      onChange={e => setRequestForm(p => ({ ...p, role: e.target.value }))}
+                      className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    >
+                      <option value="client_user">Client User</option>
+                      <option value="client_admin">Client Admin</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-secondary mb-1.5">
+                    Reason for Access *
+                  </label>
+                  <textarea
+                    value={requestForm.reason}
+                    onChange={e => setRequestForm(p => ({ ...p, reason: e.target.value }))}
+                    placeholder="Briefly explain why this person needs access..."
+                    rows={3}
+                    className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none"
+                  />
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (!requestForm.name || !requestForm.email ||
+                        !requestForm.jobTitle || !requestForm.reason) {
+                      return;
+                    }
+                    const newRequest = {
+                      id: 'req-' + Date.now(),
+                      requestedBy: currentUser.email,
+                      requestedByName: currentUser.name,
+                      tenantId: currentUser.tenantId,
+                      tenantName: tenant?.name || '',
+                      name: requestForm.name,
+                      email: requestForm.email,
+                      jobTitle: requestForm.jobTitle,
+                      role: requestForm.role,
+                      reason: requestForm.reason,
+                      createdAt: new Date().toISOString(),
+                      status: 'pending'
+                    };
+                    addRequest(newRequest);
+                    setRequestSubmitted(true);
+                  }}
+                  className="w-full py-3 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <Send className="w-4 h-4" />
+                  Submit Access Request
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="p-6 border-b border-border flex items-center gap-3">
+              <div className="w-9 h-9 bg-surface border border-border rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-secondary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-primary">
+                  Request History
+                </h2>
+                <p className="text-xs text-secondary">
+                  {myRequests.length} total · {myRequests.filter(r => r.status === 'pending').length} pending
+                </p>
+              </div>
+            </div>
+
+            <div className="divide-y divide-border">
+              {myRequests.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Users className="w-10 h-10 text-muted mx-auto mb-3" />
+                  <p className="text-sm text-secondary">No requests yet</p>
+                </div>
+              ) : (
+                myRequests.map(req => (
+                  <div key={req.id} className="p-4 hover:bg-background transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-primary">
+                            {req.name}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                            req.status === 'pending'
+                              ? 'bg-warning/15 text-warning'
+                              : req.status === 'approved'
+                              ? 'bg-success/15 text-success'
+                              : 'bg-danger/15 text-danger'
+                          }`}>
+                            {req.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-secondary">{req.email}</p>
+                        <p className="text-xs text-muted mt-0.5">
+                          {req.jobTitle} · {req.role.replace(/_/g, ' ')}
+                        </p>
+                        <p className="text-xs text-muted mt-1 italic">
+                          "{req.reason}"
+                        </p>
+                      </div>
+                      <div className="text-xs text-muted flex-shrink-0">
+                        {new Date(req.createdAt).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric'
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
