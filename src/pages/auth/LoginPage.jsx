@@ -74,9 +74,7 @@ export default function LoginPage() {
           className="w-full max-w-md"
         >
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#16b6bb] to-[#008086] rounded-xl flex items-center justify-center">
-              <Package className="w-7 h-7 text-white" />
-            </div>
+            <img src="/ChatGPT_Image_Mar_8__2026__10_36_09_AM-removebg-preview.png" alt="PolarAxis" className="w-12 h-12 object-contain" />
             <span className="text-2xl font-bold text-primary">PolarAxis</span>
           </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Eye, EyeOff, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import ThemeToggle from '../../components/shared/ThemeToggle';
@@ -100,9 +100,7 @@ export default function RegisterPage() {
         className="max-w-md w-full text-center"
       >
         <div className="flex items-center gap-2 justify-center mb-10">
-          <div className="w-9 h-9 bg-gradient-to-br from-sky-400 to-blue-600 rounded-xl flex items-center justify-center">
-            <Package className="w-5 h-5 text-white" />
-          </div>
+          <img src="/ChatGPT_Image_Mar_8__2026__10_36_09_AM-removebg-preview.png" alt="PolarAxis" className="w-9 h-9 object-contain" />
           <span className="text-xl font-bold text-primary">PolarAxis</span>
         </div>
         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${iconClass}`}>
@@ -159,9 +157,7 @@ export default function RegisterPage() {
         className="max-w-md w-full text-center"
       >
         <div className="flex items-center gap-2 justify-center mb-10">
-          <div className="w-9 h-9 bg-gradient-to-br from-sky-400 to-blue-600 rounded-xl flex items-center justify-center">
-            <Package className="w-5 h-5 text-white" />
-          </div>
+          <img src="/ChatGPT_Image_Mar_8__2026__10_36_09_AM-removebg-preview.png" alt="PolarAxis" className="w-9 h-9 object-contain" />
           <span className="text-xl font-bold text-primary">PolarAxis</span>
         </div>
         <motion.div
@@ -220,9 +216,7 @@ export default function RegisterPage() {
           className="w-full max-w-md"
         >
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-600 rounded-xl flex items-center justify-center">
-              <Package className="w-6 h-6 text-white" />
-            </div>
+            <img src="/ChatGPT_Image_Mar_8__2026__10_36_09_AM-removebg-preview.png" alt="PolarAxis" className="w-10 h-10 object-contain" />
             <span className="text-xl font-bold text-primary">PolarAxis</span>
           </div>
 

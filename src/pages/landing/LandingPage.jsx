@@ -117,9 +117,9 @@ export default function LandingPage() {
 
       <nav className="sticky top-0 bg-white border-b z-50" style={{ borderColor: '#cceced' }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="w-7 h-7 rounded-sm" style={{ backgroundColor: '#16b6bb' }} />
-            <span className="ml-2 font-semibold text-lg" style={{ color: '#0d2b2c' }}>PolarAxis</span>
+          <div className="flex items-center gap-2">
+            <img src="/ChatGPT_Image_Mar_8__2026__10_36_09_AM-removebg-preview.png" alt="PolarAxis" className="w-8 h-8 object-contain" />
+            <span className="font-bold text-lg" style={{ color: '#0d2b2c' }}>PolarAxis</span>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
@@ -1103,10 +1103,7 @@ export default function LandingPage() {
             {/* Col 1 — Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-md flex items-center justify-center"
-                  style={{ backgroundColor: '#16b6bb' }}>
-                  <span className="text-white font-bold text-xs">P</span>
-                </div>
+                <img src="/ChatGPT_Image_Mar_8__2026__10_36_09_AM-removebg-preview.png" alt="PolarAxis" className="w-7 h-7 object-contain" />
                 <span className="font-bold text-white text-lg">PolarAxis</span>
               </div>
               <p className="text-sm leading-relaxed mb-6"

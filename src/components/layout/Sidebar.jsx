@@ -92,9 +92,7 @@ export default function Sidebar() {
             animate={{ opacity: 1 }}
             className="flex items-center gap-2"
           >
-            <div className="w-8 h-8 bg-[#16b6bb] rounded-lg flex items-center justify-center">
-              <Package className="w-5 h-5 text-white" />
-            </div>
+            <img src="/ChatGPT_Image_Mar_8__2026__10_36_09_AM-removebg-preview.png" alt="PolarAxis" className="w-8 h-8 object-contain" />
             <span className="font-bold text-lg text-primary">PolarAxis</span>
           </motion.div>
         )}
