@@ -44,6 +44,3 @@ export const updateRequestStatus = (id, status) => {
   }
   return null;
 };
-
-
-export { registrationRequests }
