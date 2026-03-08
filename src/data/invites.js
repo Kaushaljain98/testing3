@@ -49,6 +49,3 @@ export const consumeInvite = (token) => {
   }
   return null;
 };
-
-
-export { invites }
