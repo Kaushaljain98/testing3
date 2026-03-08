@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Building2, Users, Package, HardDrive, UserPlus, Copy, Check } from 'lucide-react';
+import { Building2, Users, Package, HardDrive, UserPlus, Copy, Check, Mail, Send, CheckCircle } from 'lucide-react';
 import { tenants } from '../../data/tenants';
 import { shipments } from '../../data/shipments';
 import { users } from '../../data/users';
@@ -19,6 +19,7 @@ export default function TenantManagement() {
   const [companySuggestions, setCompanySuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
   const toast = useToast();
 
   setTimeout(() => setLoading(false), 400);
@@ -366,11 +367,66 @@ export default function TenantManagement() {
                     Copy Link
                   </button>
                 </div>
+                {!emailSent ? (
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <div className="bg-background px-4 py-2 border-b border-border flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5 text-muted" />
+                      <span className="text-xs text-muted font-medium">Email Preview</span>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      <div className="flex gap-2 text-xs">
+                        <span className="text-muted w-6">To:</span>
+                        <span className="text-primary font-medium">{inviteForm.email}</span>
+                      </div>
+                      <div className="flex gap-2 text-xs">
+                        <span className="text-muted w-6">Re:</span>
+                        <span className="text-secondary">
+                          You've been invited to join PolarAxis
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t border-border text-xs text-secondary leading-relaxed">
+                        Hi {inviteForm.name}, you have been invited to join{' '}
+                        <span className="font-medium text-primary">
+                          {inviteForm.companyName}
+                        </span>{' '}
+                        on PolarAxis as{' '}
+                        <span className="font-medium text-primary capitalize">
+                          {inviteForm.role.replace(/_/g, ' ')}
+                        </span>
+                        . Click the link below to activate your account.
+                        This invite expires in 30 days.
+                      </div>
+                    </div>
+                    <div className="px-4 pb-4">
+                      <button
+                        onClick={() => {
+                          setTimeout(() => setEmailSent(true), 800);
+                          toast.success('Invitation email sent to ' + inviteForm.email);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-accent hover:bg-accent-dark text-white rounded-lg text-sm font-semibold transition-colors"
+                      >
+                        <Send className="w-4 h-4" />
+                        Send Invitation Email
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-success/8 border border-success/25 rounded-lg">
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-primary">Email sent!</p>
+                      <p className="text-xs text-secondary mt-0.5">
+                        Invitation delivered to {inviteForm.email}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <button
                   onClick={() => {
                     setShowInviteModal(false);
                     setInviteForm({ name: '', email: '', role: 'client_user', companyName: '', tenantId: '' });
                     setInviteLink('');
+                    setEmailSent(false);
                   }}
                   className="w-full py-2.5 border border-border text-secondary hover:text-primary rounded-lg text-sm transition-colors"
                 >

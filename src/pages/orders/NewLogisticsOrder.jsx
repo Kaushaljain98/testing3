@@ -15,6 +15,15 @@ export default function NewLogisticsOrder() {
     deadline: ''
   });
   const [selectedRoute, setSelectedRoute] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [cardDetails, setCardDetails] = useState({
+    number: '',
+    name: '',
+    expiry: '',
+    cvv: ''
+  });
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -327,6 +336,291 @@ export default function NewLogisticsOrder() {
     </div>
   );
 
+  const renderStep5 = () => {
+    const materialTotal = selectedMaterials.reduce(
+      (sum, m) => sum + (m.pricePerUnit * (m.quantity || 1)), 0
+    );
+    const logisticsTotal = selectedRoute?.cost || 0;
+    const tax = Math.round((materialTotal + logisticsTotal) * 0.05);
+    const grandTotal = materialTotal + logisticsTotal + tax;
+
+    if (paymentDone) return (
+      <div className="text-center py-12">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+          className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6"
+        >
+          <CheckCircle className="w-10 h-10 text-success" />
+        </motion.div>
+        <h2 className="text-2xl font-bold text-primary mb-2">Order Confirmed!</h2>
+        <p className="text-secondary mb-2">
+          Your order has been placed successfully.
+        </p>
+        <p className="text-sm text-muted mb-8">
+          Order ID: <span className="font-mono text-accent">
+            PX-{Date.now().toString().slice(-6)}
+          </span>
+        </p>
+        <div className="bg-surface border border-border rounded-xl p-4 text-left max-w-sm mx-auto mb-6 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted">Materials</span>
+            <span className="text-primary">${materialTotal.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted">Logistics</span>
+            <span className="text-primary">${logisticsTotal.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted">Tax (5%)</span>
+            <span className="text-primary">${tax.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between text-sm font-bold pt-2 border-t border-border">
+            <span className="text-primary">Total Paid</span>
+            <span className="text-accent">${grandTotal.toLocaleString()}</span>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/shipments')}
+          className="px-8 py-3 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg transition-colors"
+        >
+          Track Your Shipment →
+        </button>
+      </div>
+    );
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl font-semibold text-primary mb-1">Payment</h2>
+          <p className="text-sm text-secondary">
+            Complete your order payment securely
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-2">
+                Payment Method
+              </label>
+              <div className="flex gap-2">
+                {[
+                  { id: 'card', label: '💳 Credit Card' },
+                  { id: 'wire', label: '🏦 Wire Transfer' },
+                  { id: 'po', label: '📄 Purchase Order' }
+                ].map(method => (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(method.id)}
+                    className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
+                      paymentMethod === method.id
+                        ? 'bg-accent/10 border-accent text-accent'
+                        : 'bg-surface border-border text-secondary hover:border-accent/50'
+                    }`}
+                  >
+                    {method.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {paymentMethod === 'card' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-secondary mb-1.5">
+                    Card Number
+                  </label>
+                  <input
+                    type="text"
+                    value={cardDetails.number}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                      const formatted = val.replace(/(.{4})/g, '$1 ').trim();
+                      setCardDetails(p => ({ ...p, number: formatted }));
+                    }}
+                    placeholder="4242 4242 4242 4242"
+                    className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-primary text-sm font-mono focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-secondary mb-1.5">
+                    Cardholder Name
+                  </label>
+                  <input
+                    type="text"
+                    value={cardDetails.name}
+                    onChange={e => setCardDetails(p => ({ ...p, name: e.target.value }))}
+                    placeholder="Dr. Priya Sharma"
+                    className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1.5">
+                      Expiry
+                    </label>
+                    <input
+                      type="text"
+                      value={cardDetails.expiry}
+                      onChange={e => {
+                        let val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        if (val.length > 2) val = val.slice(0,2) + '/' + val.slice(2);
+                        setCardDetails(p => ({ ...p, expiry: val }));
+                      }}
+                      placeholder="MM/YY"
+                      className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-primary text-sm font-mono focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1.5">
+                      CVV
+                    </label>
+                    <input
+                      type="password"
+                      value={cardDetails.cvv}
+                      onChange={e => setCardDetails(p => ({
+                        ...p,
+                        cvv: e.target.value.replace(/\D/g, '').slice(0, 4)
+                      }))}
+                      placeholder="•••"
+                      className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-primary text-sm font-mono focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted">
+                  <span>🔒</span>
+                  <span>Secured by 256-bit SSL encryption</span>
+                </div>
+              </div>
+            )}
+
+            {paymentMethod === 'wire' && (
+              <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
+                <p className="text-sm font-semibold text-primary">
+                  Wire Transfer Details
+                </p>
+                {[
+                  { label: 'Bank', value: 'Standard Chartered Bank' },
+                  { label: 'Account Name', value: 'PolarAxis Logistics Ltd.' },
+                  { label: 'Account No.', value: '••• ••• 4892' },
+                  { label: 'SWIFT/BIC', value: 'SCBLSGSG' },
+                  { label: 'Reference', value: 'PX-ORD-' + Date.now().toString().slice(-6) }
+                ].map(row => (
+                  <div key={row.label} className="flex justify-between text-sm">
+                    <span className="text-muted">{row.label}</span>
+                    <span className="text-primary font-mono font-medium">{row.value}</span>
+                  </div>
+                ))}
+                <p className="text-xs text-muted pt-2 border-t border-border">
+                  Orders are processed within 1 business day
+                  of payment confirmation.
+                </p>
+              </div>
+            )}
+
+            {paymentMethod === 'po' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-secondary mb-1.5">
+                    PO Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. PO-2026-00492"
+                    className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-primary text-sm font-mono focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-secondary mb-1.5">
+                    Authorized By
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Name of approving manager"
+                    className="w-full px-4 py-3 bg-surface border border-border rounded-lg text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  />
+                </div>
+                <p className="text-xs text-muted">
+                  Net-30 payment terms apply. Invoice will be
+                  sent to your billing email on dispatch.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="bg-surface border border-border rounded-xl p-5 sticky top-4">
+              <h3 className="font-semibold text-primary mb-4">Order Summary</h3>
+              <div className="space-y-3 text-sm">
+                <div className="space-y-1">
+                  {selectedMaterials.map(m => (
+                    <div key={m.id} className="flex justify-between">
+                      <span className="text-secondary truncate mr-2">{m.name}</span>
+                      <span className="text-primary font-mono flex-shrink-0">
+                        ${(m.pricePerUnit * (m.quantity || 1)).toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between pt-2 border-t border-border">
+                  <span className="text-secondary">Materials subtotal</span>
+                  <span className="text-primary font-mono">
+                    ${materialTotal.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-secondary">
+                    Logistics ({selectedRoute?.mode})
+                  </span>
+                  <span className="text-primary font-mono">
+                    ${logisticsTotal.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-secondary">Tax (5%)</span>
+                  <span className="text-primary font-mono">${tax.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between pt-3 border-t border-border font-bold text-base">
+                  <span className="text-primary">Total</span>
+                  <span className="text-accent font-mono">
+                    ${grandTotal.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setPaymentProcessing(true);
+                  setTimeout(() => {
+                    setPaymentProcessing(false);
+                    setPaymentDone(true);
+                  }, 2000);
+                }}
+                disabled={paymentProcessing}
+                className="w-full mt-6 py-3.5 bg-accent hover:bg-accent-dark text-white font-bold rounded-xl transition-colors disabled:opacity-70 flex items-center justify-center gap-2 text-sm"
+              >
+                {paymentProcessing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Processing payment...
+                  </>
+                ) : (
+                  <>🔒 Pay ${grandTotal.toLocaleString()}</>
+                )}
+              </button>
+              <p className="text-center text-xs text-muted mt-3">
+                By confirming you agree to PolarAxis Terms of Service
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -340,20 +634,26 @@ export default function NewLogisticsOrder() {
       </div>
 
       <div className="flex items-center justify-between mb-8">
-        {[1, 2, 3, 4].map((s) => (
-          <div key={s} className="flex items-center flex-1">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-colors ${
-              step >= s ? 'border-accent bg-accent text-white' : 'border-border text-muted'
-            }`}>
-              {s}
+        {['Materials', 'Shipment', 'Route', 'Review', 'Payment'].map((label, idx) => {
+          const s = idx + 1;
+          return (
+            <div key={s} className="flex items-center flex-1">
+              <div className="flex flex-col items-center">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-colors ${
+                  step >= s ? 'border-accent bg-accent text-white' : 'border-border text-muted'
+                }`}>
+                  {s}
+                </div>
+                <span className="text-xs text-muted mt-1">{label}</span>
+              </div>
+              {s < 5 && (
+                <div className={`flex-1 h-1 mx-2 rounded ${
+                  step > s ? 'bg-accent' : 'bg-border'
+                }`} />
+              )}
             </div>
-            {s < 4 && (
-              <div className={`flex-1 h-1 mx-2 rounded ${
-                step > s ? 'bg-accent' : 'bg-border'
-              }`} />
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="bg-surface border border-border rounded-xl p-8">
@@ -361,9 +661,10 @@ export default function NewLogisticsOrder() {
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === 4 && renderStep4()}
+        {step === 5 && renderStep5()}
 
         <div className="flex gap-4 mt-8 pt-6 border-t border-border">
-          {step > 1 && (
+          {step > 1 && !paymentDone && (
             <button
               onClick={() => setStep(step - 1)}
               className="flex items-center gap-2 px-6 py-3 bg-border hover:bg-border/80 text-primary font-semibold rounded-lg transition-colors"
@@ -372,22 +673,13 @@ export default function NewLogisticsOrder() {
               Previous
             </button>
           )}
-          {step < 4 ? (
+          {step < 5 && !paymentDone && (
             <button
               onClick={() => setStep(step + 1)}
               disabled={step === 1 && selectedMaterials.length === 0}
               className="ml-auto flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmitOrder}
-              className="ml-auto flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors"
-            >
-              <CheckCircle className="w-5 h-5" />
-              Create Order
+              {step === 4 ? 'Proceed to Payment →' : 'Next →'}
             </button>
           )}
         </div>
